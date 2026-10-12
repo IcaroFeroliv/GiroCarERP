@@ -2,13 +2,13 @@ import streamlit as st
 from supabase import create_client, Client
 
 @st.cache_resource
-def init_connection() -> Client:
+def init_connection():
     try:
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
         return create_client(url, key)
     except Exception as e:
-        st.error(f"Erro ao conectar com o banco de dados: {e}")
+        st.error(f"Erro ao ligar à base de dados: {e}")
         return None
 
 supabase = init_connection()
