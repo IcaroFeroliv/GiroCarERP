@@ -2,15 +2,16 @@ import streamlit as st
 import pandas as pd
 from database import supabase
 
+# Apenas o ícone da aba no navegador foi mantido
 st.set_page_config(page_title="Gestão de Veículos", page_icon="🚙", layout="wide")
-st.title("🚙 Gestão de Frota e Veículos")
+st.title("Gestão de Frota e Veículos")
 
 if not supabase:
     st.error("Erro de conexão com o banco.")
     st.stop()
 
-# Organização limpa da interface em Abas
-aba_consulta, aba_cadastro = st.tabs(["📋 Consultar e Gerenciar", "➕ Cadastrar Veículo"])
+# Abas sem emojis
+aba_consulta, aba_cadastro = st.tabs(["Consultar e Gerenciar", "Cadastrar Veículo"])
 
 # ==========================================
 # ABA 1: READ, UPDATE e DELETE (Consulta)
@@ -18,44 +19,71 @@ aba_consulta, aba_cadastro = st.tabs(["📋 Consultar e Gerenciar", "➕ Cadastr
 with aba_consulta:
     st.subheader("Veículos no Sistema")
     try:
-        # READ: Busca todos os veículos
         res = supabase.table("veiculo").select("*").execute()
         df = pd.DataFrame(res.data)
         
         if not df.empty:
-            # Exibe a tabela na tela
-            st.dataframe(df, use_container_width=True, hide_index=True)
+            
+            # --- NOVA SEÇÃO DE FILTROS ---
+            with st.expander("Filtros de Busca", expanded=False):
+                col_f1, col_f2, col_f3 = st.columns(3)
+                
+                with col_f1:
+                    filtro_placa = st.text_input("Buscar por Placa").upper()
+                with col_f2:
+                    filtro_status = st.multiselect("Filtrar por Status", options=df["status_veiculo"].unique())
+                with col_f3:
+                    filtro_marca = st.multiselect("Filtrar por Marca", options=df["marca"].unique())
+            
+            # --- APLICANDO OS FILTROS NO DATAFRAME ---
+            df_filtrado = df.copy()
+            
+            if filtro_placa:
+                df_filtrado = df_filtrado[df_filtrado["placa"].str.contains(filtro_placa)]
+            if filtro_status:
+                df_filtrado = df_filtrado[df_filtrado["status_veiculo"].isin(filtro_status)]
+            if filtro_marca:
+                df_filtrado = df_filtrado[df_filtrado["marca"].isin(filtro_marca)]
+            
+            # Exibe a tabela filtrada
+            st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
             
             st.divider()
-            st.subheader("⚙️ Ações Rápidas")
-            col1, col2 = st.columns(2)
             
-            # UPDATE: Atualizar Status
-            with col1:
-                st.write("**Atualizar Status do Veículo**")
-                placa_edit = st.selectbox("Selecione a Placa", df["Placa"], key="edit_placa")
-                novo_status = st.selectbox("Novo Status", ["Estoque", "Em Preparação", "Reservado", "Vendido"])
+            # --- AÇÕES RÁPIDAS COM BASE NO FILTRO ---
+            if not df_filtrado.empty:
+                st.subheader("Ações Rápidas")
+                col1, col2 = st.columns(2)
                 
-                if st.button("Atualizar Status", use_container_width=True):
-                    supabase.table("veiculo").update({"Status_Veiculo": novo_status}).eq("Placa", placa_edit).execute()
-                    st.success(f"Status da placa {placa_edit} atualizado para {novo_status}!")
-                    st.rerun() # Recarrega a página para atualizar a tabela
-            
-            # DELETE: Excluir Veículo
-            with col2:
-                st.write("**Excluir Registro**")
-                placa_del = st.selectbox("Selecione a Placa", df["Placa"], key="del_placa")
-                
-                if st.button("Excluir Veículo", type="primary", use_container_width=True):
-                    # O bloco Try captura o erro ON DELETE RESTRICT (RN05) do banco
-                    try:
-                        supabase.table("veiculo").delete().eq("Placa", placa_del).execute()
-                        st.success(f"Veículo {placa_del} excluído com sucesso!")
+                # UPDATE
+                with col1:
+                    st.write("**Atualizar Status do Veículo**")
+                    placa_edit = st.selectbox("Selecione a Placa", df_filtrado["placa"], key="edit_placa")
+                    # Ajustado para refletir os status do seu banco de dados
+                    novo_status = st.selectbox("Novo Status", ["Disponivel", "Em preparacao", "Vendido", "Reservado"])
+                    
+                    if st.button("Atualizar Status", use_container_width=True):
+                        supabase.table("veiculo").update({"status_veiculo": novo_status}).eq("placa", placa_edit).execute()
+                        st.success(f"Status da placa {placa_edit} atualizado para {novo_status}!")
                         st.rerun()
-                    except Exception as e:
-                        st.error("Não é possível excluir este veículo pois ele já possui vínculo com Manutenções ou Histórico.")
+                
+                # DELETE
+                with col2:
+                    st.write("**Excluir Registro**")
+                    placa_del = st.selectbox("Selecione a Placa", df_filtrado["placa"], key="del_placa")
+                    
+                    if st.button("Excluir Veículo", type="primary", use_container_width=True):
+                        try:
+                            supabase.table("veiculo").delete().eq("placa", placa_del).execute()
+                            st.success(f"Veículo {placa_del} excluído com sucesso!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error("Não é possível excluir este veículo pois ele já possui vínculo com Manutenções ou Histórico.")
+            else:
+                st.warning("Nenhum veículo encontrado com os filtros aplicados.")
+                
         else:
-            st.info("Nenhum veículo cadastrado no momento.")
+            st.info("Nenhum veículo cadastrado no sistema.")
             
     except Exception as e:
         st.error(f"Erro ao carregar base de veículos: {e}")
@@ -66,7 +94,6 @@ with aba_consulta:
 with aba_cadastro:
     st.subheader("Formulário de Entrada de Veículo")
     
-    # st.form cria um formulário que só é enviado ao clicar no botão final
     with st.form("form_cadastro_veiculo", clear_on_submit=True):
         col1, col2, col3 = st.columns(3)
         
@@ -82,14 +109,13 @@ with aba_cadastro:
             ano_mod = st.number_input("Ano Modelo", min_value=1900, max_value=2100, step=1, value=2024)
             km = st.number_input("Quilometragem (KM)", min_value=0.0, step=100.0)
             valor = st.number_input("Valor de Aquisição (R$)", min_value=0.0, step=1000.0)
-            status = st.selectbox("Status Inicial", ["Estoque", "Em Preparação"])
+            status = st.selectbox("Status Inicial", ["Disponivel", "Em preparacao"])
             
         with col3:
             st.write("Indicadores de Risco (RN04)")
             leilao = st.checkbox("Passagem por Leilão?")
             sinistro = st.checkbox("Indicador de Sinistro?")
             st.write("Vínculos")
-            # Obs: Para o CRUD funcionar, as Lojas e Fornecedores já devem existir no banco
             cnpj_loja = st.text_input("CNPJ da Loja (Destino)")
             cnpj_forn = st.text_input("CNPJ/CPF do Fornecedor (Origem)")
         
@@ -100,27 +126,24 @@ with aba_cadastro:
                 st.warning("Preencha todos os campos obrigatórios (Placa, Chassi e CNPJs)!")
             else:
                 try:
-                    # Monta o dicionário com os nomes idênticos às colunas do SQL
                     novo_veiculo = {
-                        "Placa": placa,
-                        "Chassi": chassi,
-                        "Marca": marca,
-                        "Modelo": modelo,
-                        "Ano_Fabricacao": ano_fab,
-                        "Ano_Modelo": ano_mod,
-                        "Cor": cor,
-                        "Quilometragem": km,
-                        "Valor_Aquisicao": valor,
-                        "Indicador_Leilao": leilao,
-                        "Indicador_Sinistro": sinistro,
-                        "Status_Veiculo": status,
-                        "CNPJ_Loja": cnpj_loja,
-                        "CNPJ_CPF_Fornecedor": cnpj_forn
+                        "placa": placa,
+                        "chassi": chassi,
+                        "marca": marca,
+                        "modelo": modelo,
+                        "ano_fabricacao": ano_fab,
+                        "ano_modelo": ano_mod,
+                        "cor": cor,
+                        "quilometragem": km,
+                        "valor_aquisicao": valor,
+                        "indicador_leilao": leilao,
+                        "indicador_sinistro": sinistro,
+                        "status_veiculo": status,
+                        "cnpj_loja": cnpj_loja,
+                        "cnpj_cpf_fornecedor": cnpj_forn
                     }
-                    # Executa a inserção no Supabase
                     supabase.table("veiculo").insert(novo_veiculo).execute()
                     st.success(f"O veículo {marca} {modelo} ({placa}) foi salvo com sucesso!")
-                    
                 except Exception as e:
-                    st.error("Erro ao salvar! Verifique se a Placa/Chassi já existem e se a Loja/Fornecedor já foram cadastrados no sistema.")
-                    st.error(f"Detalhe do Banco de Dados: {e}")
+                    st.error("Erro ao salvar! Verifique se a Placa/Chassi já existem e se a Loja/Fornecedor estão cadastrados.")
+                    st.error(f"Detalhe: {e}")

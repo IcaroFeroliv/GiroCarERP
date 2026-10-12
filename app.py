@@ -5,7 +5,7 @@ from database import supabase
 # Configuração da página principal (deve ser o primeiro comando)
 st.set_page_config(page_title="GiroCar ERP", page_icon="🚗", layout="wide")
 
-st.title("🚗 GiroCar ERP - Dashboard Gerencial")
+st.title("GiroCar ERP - Dashboard Gerencial")
 st.write("Bem-vindo ao sistema central de gestão de concessionárias.")
 
 # Verifica a conexão com o banco (Critério de Tratamento de Erros)
@@ -17,25 +17,24 @@ st.divider()
 
 # RN07 - Inventário Dinâmico: O estoque é calculado através de um SELECT COUNT dinâmico
 try:
-    # Ajustado para minúsculo: valor_aquisicao e status_veiculo
-    response = supabase.table("veiculo").select("valor_aquisicao").eq("status_veiculo", "Estoque").execute()
+    response = supabase.table("veiculo").select("valor_aquisicao").eq("status_veiculo", "Disponivel").execute()
     veiculos_estoque = response.data
     
-    # Processa os KPIs
     quantidade_estoque = len(veiculos_estoque)
-    # Ajustado a chave do dicionário para minúsculo
     capital_investido = sum([v["valor_aquisicao"] for v in veiculos_estoque])
     
-    # Exibe os indicadores na tela
-    st.subheader("📊 Visão Geral do Pátio (Em Tempo Real)")
+    valor_br = f"{capital_investido:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    
+    st.subheader("Visão Geral do Pátio (Em Tempo Real)")
     col1, col2, col3 = st.columns(3)
     
-    col1.metric(label="Veículos em Estoque (Unidades)", value=f"{quantidade_estoque}")
-    col2.metric(label="Capital Investido no Estoque", value=f"R$ {capital_investido:,.2f}")
-    col3.metric(label="Status do Sistema", value="Online 🟢")
+    col1.metric(label="Veículos Disponíveis", value=f"{quantidade_estoque}")
+    col2.metric(label="Capital Investido", value=f"R$ {valor_br}")
+    col3.metric(label="Status do Sistema", value="Online")
 
 except Exception as e:
     st.error(f"Erro ao carregar os indicadores do dashboard. Detalhe técnico: {e}")
 
+
 st.write("---")
-st.info("👈 Utilize o menu lateral para navegar entre os módulos do ERP (Veículos, Transações, etc).")
+st.info("Utilize o menu lateral para navegar entre os módulos do ERP (Veículos, Transações, etc).")
