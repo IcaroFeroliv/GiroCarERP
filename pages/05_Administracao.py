@@ -16,6 +16,7 @@ aba_lojas, aba_funcionarios = st.tabs(["🏪 Lojas (Filiais)", "🧑‍💼 Func
 # ==========================================
 with aba_lojas:
     st.subheader("Cadastro de Loja")
+
     
     with st.form("form_loja", clear_on_submit=True):
         col1, col2 = st.columns(2)
