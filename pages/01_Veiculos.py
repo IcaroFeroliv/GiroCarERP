@@ -86,7 +86,9 @@ with aba_consulta:
             st.info("Nenhum veículo cadastrado no sistema.")
             
     except Exception as e:
-        st.error(f"Erro ao carregar base de veículos: {e}")
+        st.error("⚠️ Não foi possível estabelecer conexão com o banco de dados. Verifique sua conexão de rede ou tente novamente mais tarde.")
+        with st.expander("Detalhes Técnicos (Para Suporte)"):
+            st.code(str(e))
 
 # ==========================================
 # ABA 2: CREATE (Cadastro)
@@ -145,5 +147,6 @@ with aba_cadastro:
                     supabase.table("veiculo").insert(novo_veiculo).execute()
                     st.success(f"O veículo {marca} {modelo} ({placa}) foi salvo com sucesso!")
                 except Exception as e:
-                    st.error("Erro ao salvar! Verifique se a Placa/Chassi já existem e se a Loja/Fornecedor estão cadastrados.")
-                    st.error(f"Detalhe: {e}")
+                    st.error("⚠️ Não foi possível estabelecer conexão com o banco de dados. Verifique sua conexão de rede ou tente novamente mais tarde.")
+                    with st.expander("Detalhes Técnicos (Para Suporte)"):
+                        st.code(str(e))

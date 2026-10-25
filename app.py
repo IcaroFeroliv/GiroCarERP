@@ -33,7 +33,9 @@ try:
     col3.metric(label="Status do Sistema", value="Online")
 
 except Exception as e:
-    st.error(f"Erro ao carregar os indicadores do dashboard. Detalhe técnico: {e}")
+    st.error("⚠️ Não foi possível estabelecer conexão com o banco de dados. Verifique sua conexão de rede ou tente novamente mais tarde.")
+    with st.expander("Detalhes Técnicos (Para Suporte)"):
+        st.code(str(e))
 
 
 st.write("---")
