@@ -12,7 +12,8 @@ if not supabase:
     st.stop()
 
 # Adicionamos a terceira aba para a FIPE
-aba_consulta, aba_cadastro, aba_fipe = st.tabs(["Consultar e Gerenciar", "Cadastrar Veículo", "Consulta Tabela FIPE"])
+aba_consulta, aba_cadastro, aba_fipe, aba_historico = st.tabs([ "Consultar e Gerenciar", "Cadastrar Veículo", "Consulta Tabela FIPE", "Histórico de Avaliações"
+])
 
 # ==========================================
 # ABA 1: READ, UPDATE e DELETE (Consulta)
@@ -273,3 +274,70 @@ with aba_fipe:
                     st.error("Erro técnico ao realizar a consulta final.")
                     with st.expander("Detalhes Técnicos"):
                         st.code(str(e))
+
+# ==========================================
+# ABA 4: VISUALIZAR HISTÓRICO FIPE
+# ==========================================
+with aba_historico:
+    st.subheader("Histórico de Avaliações (FIPE)")
+    st.write("Acompanhe a variação de preço de mercado dos veículos da frota.")
+    
+    try:
+        # Busca os dados ordenando dos mais recentes para os mais antigos
+        res_historico = supabase.table("historico").select("*").order("data_consulta", desc=True).execute()
+        df_historico = pd.DataFrame(res_historico.data)
+        
+        if not df_historico.empty:
+            
+            # --- SEÇÃO DE FILTROS AVANÇADOS ---
+            with st.expander("Filtros de Busca do Histórico", expanded=False):
+                col_f1, col_f2, col_f3 = st.columns(3)
+                
+                with col_f1:
+                    filtro_placa_hist = st.text_input("Filtrar por Placa", key="filtro_hist_placa").upper()
+                with col_f2:
+                    # Busca dinamicamente os meses que existem no banco
+                    meses_unicos = df_historico["mes_ano_referencia"].unique()
+                    filtro_mes = st.multiselect("Mês de Referência", options=meses_unicos)
+                with col_f3:
+                    # Busca dinamicamente as datas de consulta
+                    datas_unicas = df_historico["data_consulta"].unique()
+                    filtro_data = st.multiselect("Data da Consulta", options=datas_unicas)
+            
+            # --- APLICANDO OS FILTROS ---
+            df_filtrado = df_historico.copy()
+            
+            if filtro_placa_hist:
+                df_filtrado = df_filtrado[df_filtrado["placa_veiculo"].str.contains(filtro_placa_hist)]
+            if filtro_mes:
+                df_filtrado = df_filtrado[df_filtrado["mes_ano_referencia"].isin(filtro_mes)]
+            if filtro_data:
+                df_filtrado = df_filtrado[df_filtrado["data_consulta"].isin(filtro_data)]
+            
+            # --- EXIBIÇÃO DA TABELA ---
+            if not df_filtrado.empty:
+                # 1. Formata a moeda para o padrão BR
+                df_filtrado["valor_api"] = df_filtrado["valor_api"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                
+                # 2. Renomeia as colunas para uma interface mais amigável e limpa
+                df_exibicao = df_filtrado.rename(columns={
+                    "placa_veiculo": "Placa",
+                    "mes_ano_referencia": "Mês de Referência",
+                    "valor_api": "Valor de Mercado",
+                    "data_consulta": "Data da Consulta"
+                })
+                
+                # Seleciona apenas as colunas renomeadas (ocultando IDs internos se houver)
+                colunas_mostrar = ["Placa", "Mês de Referência", "Valor de Mercado", "Data da Consulta"]
+                
+                st.dataframe(df_exibicao[colunas_mostrar], use_container_width=True, hide_index=True)
+            else:
+                st.warning("Nenhum registro encontrado com os filtros aplicados.")
+                
+        else:
+            st.info("Nenhuma avaliação foi salva no histórico até o momento.")
+            
+    except Exception as e:
+        st.error("Erro ao carregar o histórico de avaliações.")
+        with st.expander("Detalhes Técnicos"):
+            st.code(str(e))
