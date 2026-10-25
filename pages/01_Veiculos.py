@@ -133,7 +133,7 @@ with aba_cadastro:
             
             with col_r1:
                 st.write("### Indicadores de Risco")
-                passagem_leilao = st.checkbox("Passagem por Leilão?")
+                indicador_leilao = st.checkbox("Indicador de Leilão?")
                 indicador_sinistro = st.checkbox("Indicador de Sinistro?")
                 
             with col_r2:
@@ -165,7 +165,7 @@ with aba_cadastro:
                         "quilometragem": km,
                         "valor_aquisicao": valor_aquisicao,
                         "status_veiculo": status_inicial,
-                        "passagem_leilao": passagem_leilao,
+                        "indicador_leilao": indicador_leilao,
                         "indicador_sinistro": indicador_sinistro,
                         "cnpj_loja": cnpj_loja,
                         "cnpj_cpf_fornecedor": cnpj_fornecedor
