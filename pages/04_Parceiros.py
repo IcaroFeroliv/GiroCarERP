@@ -60,7 +60,7 @@ if not supabase:
 
 # Abas para separar Clientes e Fornecedores
 aba_clientes, aba_fornecedores = st.tabs(
-    ["🎯 Clientes (CRM)", "🏭 Fornecedores"]
+    ["Clientes (CRM)", "Fornecedores"]
 )
 
 # ==========================================

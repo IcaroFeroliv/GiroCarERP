@@ -62,7 +62,7 @@ if not supabase:
     st.stop()
 
 aba_lojas, aba_funcionarios = st.tabs(
-    ["🏪 Lojas (Filiais)", "🧑‍💼 Funcionários"]
+    ["Lojas (Filiais)", "Funcionários"]
 )
 
 # ==========================================
