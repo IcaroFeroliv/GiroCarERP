@@ -93,65 +93,93 @@ with aba_consulta:
             st.code(str(e))
 
 # ==========================================
-# ABA 2: CREATE (Cadastro)
+# ABA 2: CADASTRAR VEÍCULO
 # ==========================================
 with aba_cadastro:
     st.subheader("Formulário de Entrada de Veículo")
     
-    with st.form("form_cadastro_veiculo", clear_on_submit=True):
-        col1, col2, col3 = st.columns(3)
+    try:
+        # Busca dinamicamente os parceiros cadastrados no banco
+        res_lojas = supabase.table("loja").select("cnpj, nome_unidade").execute()
+        lista_lojas = [f"{l['cnpj']} - {l['nome_unidade']}" for l in res_lojas.data]
         
-        with col1:
-            placa = st.text_input("Placa", max_chars=10).upper()
-            chassi = st.text_input("Chassi", max_chars=17).upper()
-            marca = st.text_input("Marca")
-            modelo = st.text_input("Modelo")
-            cor = st.text_input("Cor")
+        res_fornecedores = supabase.table("fornecedor").select("cnpj_cpf, nome_razao_social").execute()
+        lista_fornecedores = [f"{f['cnpj_cpf']} - {f['nome_razao_social']}" for f in res_fornecedores.data]
+        
+        # Alerta amigável caso o banco não tenha lojas ou fornecedores
+        if not lista_lojas or not lista_fornecedores:
+            st.warning("⚠️ Atenção: Nenhuma loja ou fornecedor cadastrado. Vá até a aba Parceiros e cadastre-os antes de dar entrada na frota.")
             
-        with col2:
-            ano_fab = st.number_input("Ano Fabricação", min_value=1900, max_value=2100, step=1, value=2024)
-            ano_mod = st.number_input("Ano Modelo", min_value=1900, max_value=2100, step=1, value=2024)
-            km = st.number_input("Quilometragem (KM)", min_value=0.0, step=100.0)
-            valor = st.number_input("Valor de Aquisição (R$)", min_value=0.0, step=1000.0)
-            status = st.selectbox("Status Inicial", ["Disponivel", "Em preparacao"])
+        with st.form("form_cadastro_veiculo", clear_on_submit=True):
+            col1, col2 = st.columns(2)
             
-        with col3:
-            st.write("Indicadores de Risco (RN04)")
-            leilao = st.checkbox("Passagem por Leilão?")
-            sinistro = st.checkbox("Indicador de Sinistro?")
-            st.write("Vínculos")
-            cnpj_loja = st.text_input("CNPJ da Loja (Destino)")
-            cnpj_forn = st.text_input("CNPJ/CPF do Fornecedor (Origem)")
-        
-        submit = st.form_submit_button("Salvar Registro de Veículo", type="primary")
-        
-        if submit:
-            if not placa or not chassi or not cnpj_loja or not cnpj_forn:
-                st.warning("Preencha todos os campos obrigatórios (Placa, Chassi e CNPJs)!")
-            else:
-                try:
+            with col1:
+                placa = st.text_input("Placa", max_chars=7).upper()
+                chassi = st.text_input("Chassi", max_chars=17).upper()
+                marca = st.text_input("Marca")
+                modelo = st.text_input("Modelo")
+                cor = st.text_input("Cor")
+                
+            with col2:
+                ano_fab = st.number_input("Ano Fabricação", min_value=1900, max_value=2100, step=1, value=2024)
+                ano_mod = st.number_input("Ano Modelo", min_value=1900, max_value=2100, step=1, value=2024)
+                km = st.number_input("Quilometragem (KM)", min_value=0, step=1000)
+                valor_aquisicao = st.number_input("Valor de Aquisição (R$)", min_value=0.0, step=1000.0)
+                status_inicial = st.selectbox("Status Inicial", ["Disponivel", "Em preparacao", "Vendido"])
+                
+            st.write("---")
+            
+            col_r1, col_r2 = st.columns(2)
+            
+            with col_r1:
+                st.write("### Indicadores de Risco")
+                passagem_leilao = st.checkbox("Passagem por Leilão?")
+                indicador_sinistro = st.checkbox("Indicador de Sinistro?")
+                
+            with col_r2:
+                st.write("### Vínculos")
+                loja_selecionada = st.selectbox("Loja (Destino)", lista_lojas if lista_lojas else ["-- Cadastre uma Loja --"])
+                fornecedor_selecionado = st.selectbox("Fornecedor (Origem)", lista_fornecedores if lista_fornecedores else ["-- Cadastre um Fornecedor --"])
+                
+            submit_cadastro = st.form_submit_button("Salvar Registro de Veículo", type="primary")
+            
+            if submit_cadastro:
+                if not lista_lojas or not lista_fornecedores:
+                    st.error("Não é possível salvar. Cadastre primeiro as Lojas e Fornecedores na aba Parceiros.")
+                elif not placa or not chassi or not marca or not modelo:
+                    st.warning("Por favor, preencha os campos obrigatórios (Placa, Chassi, Marca, Modelo).")
+                else:
+                    # Extrai apenas o CNPJ/CPF selecionado na caixa (tudo antes do hífen)
+                    cnpj_loja = loja_selecionada.split(" - ")[0]
+                    cnpj_fornecedor = fornecedor_selecionado.split(" - ")[0]
+                    
+                    # Dicionário com os dados exatos para inserir no Supabase
                     novo_veiculo = {
                         "placa": placa,
                         "chassi": chassi,
                         "marca": marca,
                         "modelo": modelo,
+                        "cor": cor,
                         "ano_fabricacao": ano_fab,
                         "ano_modelo": ano_mod,
-                        "cor": cor,
                         "quilometragem": km,
-                        "valor_aquisicao": valor,
-                        "indicador_leilao": leilao,
-                        "indicador_sinistro": sinistro,
-                        "status_veiculo": status,
+                        "valor_aquisicao": valor_aquisicao,
+                        "status_veiculo": status_inicial,
+                        "passagem_leilao": passagem_leilao,
+                        "indicador_sinistro": indicador_sinistro,
                         "cnpj_loja": cnpj_loja,
-                        "cnpj_cpf_fornecedor": cnpj_forn
+                        "cnpj_cpf_fornecedor": cnpj_fornecedor
                     }
+                    
+                    # Executa a inserção no banco
                     supabase.table("veiculo").insert(novo_veiculo).execute()
-                    st.success(f"O veículo {marca} {modelo} ({placa}) foi salvo com sucesso!")
-                except Exception as e:
-                    st.error("⚠️ Não foi possível estabelecer conexão com o banco de dados. Verifique sua conexão de rede ou tente novamente mais tarde.")
-                    with st.expander("Detalhes Técnicos (Para Suporte)"):
-                        st.code(str(e))
+                    
+                    st.success(f"Sucesso! O veículo {marca} {modelo} (Placa: {placa}) foi cadastrado e já está disponível no pátio.")
+                    
+    except Exception as e:
+        st.error("Erro ao carregar o formulário de cadastro ou salvar os dados.")
+        with st.expander("Detalhes Técnicos (Para Suporte)"):
+            st.code(str(e))
 
 # ==========================================
 # ABA 3: CONSULTA FIPE (LIVRE E CASCATA)
