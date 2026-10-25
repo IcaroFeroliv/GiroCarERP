@@ -1,17 +1,18 @@
 import streamlit as st
 import pandas as pd
+import requests
+import datetime
 from database import supabase
 
-# Apenas o ícone da aba no navegador foi mantido
 st.set_page_config(page_title="Gestão de Veículos", page_icon="🚙", layout="wide")
 st.title("Gestão de Frota e Veículos")
 
 if not supabase:
-    st.error("Erro de conexão com o banco.")
+    st.error("Não foi possível estabelecer conexão com o banco de dados. Verifique sua conexão de rede ou tente novamente mais tarde.")
     st.stop()
 
-# Abas sem emojis
-aba_consulta, aba_cadastro = st.tabs(["Consultar e Gerenciar", "Cadastrar Veículo"])
+# Adicionamos a terceira aba para a FIPE
+aba_consulta, aba_cadastro, aba_fipe = st.tabs(["Consultar e Gerenciar", "Cadastrar Veículo", "Consulta Tabela FIPE"])
 
 # ==========================================
 # ABA 1: READ, UPDATE e DELETE (Consulta)
@@ -149,4 +150,126 @@ with aba_cadastro:
                 except Exception as e:
                     st.error("⚠️ Não foi possível estabelecer conexão com o banco de dados. Verifique sua conexão de rede ou tente novamente mais tarde.")
                     with st.expander("Detalhes Técnicos (Para Suporte)"):
+                        st.code(str(e))
+
+# ==========================================
+# ABA 3: CONSULTA FIPE (LIVRE E CASCATA)
+# ==========================================
+with aba_fipe:
+    st.subheader("Consultar Avaliação de Veículos (Tabela FIPE)")
+    st.write("Pesquise o valor de mercado de qualquer veículo para avaliação de troca ou para atualizar o estoque atual.")
+
+    # Funções com cache (st.cache_data) para não sobrecarregar a API e deixar o app rápido
+    @st.cache_data(ttl=86400)
+    def get_marcas():
+        try:
+            req = requests.get("https://parallelum.com.br/fipe/api/v1/carros/marcas", headers={'User-Agent': 'GiroCarERP/1.0'})
+            return req.json() if req.status_code == 200 else []
+        except: return []
+
+    @st.cache_data(ttl=86400)
+    def get_modelos(cod_marca):
+        try:
+            req = requests.get(f"https://parallelum.com.br/fipe/api/v1/carros/marcas/{cod_marca}/modelos", headers={'User-Agent': 'GiroCarERP/1.0'})
+            return req.json()['modelos'] if req.status_code == 200 else []
+        except: return []
+
+    @st.cache_data(ttl=86400)
+    def get_anos(cod_marca, cod_modelo):
+        try:
+            req = requests.get(f"https://parallelum.com.br/fipe/api/v1/carros/marcas/{cod_marca}/modelos/{cod_modelo}/anos", headers={'User-Agent': 'GiroCarERP/1.0'})
+            return req.json() if req.status_code == 200 else []
+        except: return []
+
+    # Layout das 3 caixas de seleção em linha
+    col_f1, col_f2, col_f3 = st.columns(3)
+
+    marcas = get_marcas()
+    opcoes_marcas = {m['nome']: m['codigo'] for m in marcas} if marcas else {}
+
+    with col_f1:
+        marca_sel = st.selectbox("1. Selecione a Marca", ["-- Selecione --"] + list(opcoes_marcas.keys()))
+
+    if marca_sel != "-- Selecione --":
+        cod_marca = opcoes_marcas[marca_sel]
+        modelos = get_modelos(cod_marca)
+        opcoes_modelos = {m['nome']: m['codigo'] for m in modelos}
+
+        with col_f2:
+            modelo_sel = st.selectbox("2. Selecione o Modelo", ["-- Selecione --"] + list(opcoes_modelos.keys()))
+
+        if modelo_sel != "-- Selecione --":
+            cod_modelo = opcoes_modelos[modelo_sel]
+            anos = get_anos(cod_marca, cod_modelo)
+            opcoes_anos = {a['nome']: a['codigo'] for a in anos}
+
+            with col_f3:
+                ano_sel = st.selectbox("3. Selecione o Ano/Combustível", ["-- Selecione --"] + list(opcoes_anos.keys()))
+
+            # Só busca o preço final quando os 3 campos estiverem preenchidos
+            if ano_sel != "-- Selecione --":
+                cod_ano = opcoes_anos[ano_sel]
+
+                st.divider()
+                
+                try:
+                    req_final = requests.get(f"https://parallelum.com.br/fipe/api/v1/carros/marcas/{cod_marca}/modelos/{cod_modelo}/anos/{cod_ano}", headers={'User-Agent': 'GiroCarERP/1.0'})
+                    
+                    if req_final.status_code == 200:
+                        dados = req_final.json()
+                        v_fipe = dados.get('Valor')
+                        m_ref = dados.get('MesReferencia')
+                        c_fipe = dados.get('CodigoFipe')
+
+                        # Exibe a consulta livre
+                        st.subheader("📊 Resultado da Avaliação Oficial")
+                        col_r1, col_r2, col_r3 = st.columns(3)
+                        col_r1.metric("Valor de Mercado", v_fipe)
+                        col_r2.metric("Mês de Referência", m_ref)
+                        col_r3.metric("Código FIPE Encontrado", c_fipe)
+
+                        st.write("---")
+                        
+                        # Opção de vincular ao banco de dados (Apenas se o lojista quiser)
+                        st.write("**Vincular ao Histórico de um Veículo da Frota? (Opcional)**")
+                        st.write("Se você pesquisou um carro que já está no seu estoque, selecione a placa abaixo para gravar o histórico financeiro no sistema.")
+
+                        res_frota = supabase.table("veiculo").select("placa, marca, modelo").execute()
+                        lista_frota = [f"{v['placa']} - {v['marca']} {v['modelo']}" for v in res_frota.data]
+
+                        with st.form("form_vincular_fipe", clear_on_submit=True):
+                            col_v1, col_v2 = st.columns([3, 1])
+                            
+                            with col_v1:
+                                veiculo_frota = st.selectbox("Veículos do Pátio", ["-- Não vincular (Consulta Externa) --"] + lista_frota)
+                            with col_v2:
+                                st.write("") 
+                                st.write("")
+                                submit_vincular = st.form_submit_button("Salvar no Banco de Dados", type="primary", use_container_width=True)
+
+                            if submit_vincular:
+                                if veiculo_frota == "-- Não vincular (Consulta Externa) --":
+                                    st.warning("Nenhum veículo selecionado. O histórico não foi salvo.")
+                                else:
+                                    placa = veiculo_frota.split(" - ")[0]
+                                    # Limpa a string "R$ 45.000,00" para "45000.00" (FLOAT)
+                                    valor_float = float(v_fipe.replace("R$ ", "").replace(".", "").replace(",", "."))
+
+                                    # Cria o mês no formato 'YYYY-MM' (ex: '2026-10') para respeitar o limite de 7 caracteres do banco
+                                    mes_formatado = datetime.date.today().strftime("%Y-%m")
+
+                                    novo_historico = {
+                                        "placa_veiculo": placa,
+                                        "mes_ano_referencia": mes_formatado,
+                                        "valor_api": valor_float,
+                                        "data_consulta": str(datetime.date.today())
+                                    }
+
+                                    supabase.table("historico").insert(novo_historico).execute()
+                                    st.success(f"Sucesso! O valor de {v_fipe} foi gravado no histórico financeiro da placa {placa}.")
+                    else:
+                        st.error("Falha ao comunicar com o servidor da Tabela FIPE.")
+                except Exception as e:
+                    st.error("Erro técnico ao realizar a consulta final.")
+                    with st.expander("Detalhes Técnicos"):
                         st.code(str(e))
