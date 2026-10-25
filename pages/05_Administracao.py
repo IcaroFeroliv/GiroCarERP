@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Caminho da logo na raiz do projeto
 BASE_DIR = Path(__file__).resolve().parent.parent
-LOGO_PATH = BASE_DIR / "assets" / "girocar.jpeg"
+LOGO_PATH = BASE_DIR / "assets" / "girocar.png"
 
 # Configuração da página
 st.set_page_config(
@@ -21,12 +21,32 @@ st.set_page_config(
     layout="wide"
 )
 
-# Cabeçalho com a logo
-col_logo, col_titulo = st.columns([1, 5])
+# CSS para alinhar a logo com o título
+st.markdown(
+    """
+    <style>
+    .logo-girocar {
+        transform: translateY(18px);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Cabeçalho com a logo alinhada ao título
+col_logo, col_titulo = st.columns(
+    [1, 4],
+    vertical_alignment="center"
+)
 
 with col_logo:
     if LOGO_PATH.is_file():
+        st.markdown(
+            '<div class="logo-girocar">',
+            unsafe_allow_html=True
+        )
         st.image(str(LOGO_PATH), width=180)
+        st.markdown("</div>", unsafe_allow_html=True)
     else:
         logger.error("Logo não encontrada: %s", LOGO_PATH)
 
