@@ -1,10 +1,56 @@
 import streamlit as st
 import pandas as pd
 from database import supabase
+from pathlib import Path
+import logging
 
-st.set_page_config(page_title="Dashboard Gerencial", page_icon="📊", layout="wide")
-st.title("Dashboard Gerencial")
-st.write("Visão geral em tempo real do pátio e análise de lucratividade histórica.")
+# Configuração dos logs técnicos
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Caminho da logo na raiz do projeto
+BASE_DIR = Path(__file__).resolve().parent
+LOGO_PATH = BASE_DIR / "assets" / "girocar.png"
+
+# Configuração da página
+st.set_page_config(
+    page_title="GiroCar | Dashboard de Veículos",
+    page_icon=str(LOGO_PATH) if LOGO_PATH.is_file() else "🚙",
+    layout="wide"
+)
+
+# CSS para alinhar a logo com o título
+st.markdown(
+    """
+    <style>
+    .logo-girocar {
+        transform: translateY(18px);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Cabeçalho com a logo alinhada ao título
+col_logo, col_titulo = st.columns(
+    [1, 4],
+    vertical_alignment="center"
+)
+
+with col_logo:
+    if LOGO_PATH.is_file():
+        st.markdown(
+            '<div class="logo-girocar">',
+            unsafe_allow_html=True
+        )
+        st.image(str(LOGO_PATH), width=180)
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        logger.error("Logo não encontrada: %s", LOGO_PATH)
+
+with col_titulo:
+    st.title("Deshboard de Veículos  ")
+    st.write("Visão geral em tempo real do pátio e análise de lucratividade histórica.")
 
 if not supabase:
     st.error("⚠️ Não foi possível estabelecer conexão com o banco de dados.")
