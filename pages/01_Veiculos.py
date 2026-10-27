@@ -93,8 +93,41 @@ with aba_consulta:
             if filtro_marca:
                 df_filtrado = df_filtrado[df_filtrado["marca"].isin(filtro_marca)]
             
-            # Exibe a tabela filtrada
-            st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
+            # --- PREPARAÇÃO E EXIBIÇÃO DA TABELA ---
+            # Criamos uma cópia apenas para exibição, preservando o df_filtrado original para as lógicas de UPDATE/DELETE
+            df_formatado = df_filtrado.copy()
+            
+            # Formatar valores numéricos para padrão brasileiro antes de exibir
+            df_formatado["valor_aquisicao"] = df_formatado["valor_aquisicao"].apply(
+                lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if pd.notnull(x) else ""
+            )
+            
+            # Renomeando as colunas para uma interface mais limpa e profissional
+            df_exibicao = df_formatado.rename(columns={
+                "placa": "Placa",
+                "chassi": "Chassi",
+                "marca": "Marca",
+                "modelo": "Modelo",
+                "ano_fabricacao": "Ano Fab.",
+                "ano_modelo": "Ano Mod.",
+                "cor": "Cor",
+                "quilometragem": "KM",
+                "valor_aquisicao": "Valor de Aquisição",
+                "status_veiculo": "Status",
+                "indicador_leilao": "Leilão?",
+                "indicador_sinistro": "Sinistro?",
+                "cnpj_loja": "CNPJ Loja",
+                "cnpj_cpf_fornecedor": "Doc. Fornecedor"
+            })
+            
+            # Escolha a ordem das colunas que deseja mostrar (ocultando dados desnecessários se quiser)
+            colunas_mostrar = [
+                "Placa", "Marca", "Modelo", "Cor", "Ano Fab.", "Ano Mod.", 
+                "KM", "Valor de Aquisição", "Status", "Leilão?", "Sinistro?"
+            ]
+            
+            # Exibe a tabela filtrada e formatada
+            st.dataframe(df_exibicao[colunas_mostrar], use_container_width=True, hide_index=True)
             
             st.divider()
             
@@ -196,8 +229,8 @@ with aba_cadastro:
                     st.warning("Por favor, preencha os campos obrigatórios (Placa, Chassi, Marca, Modelo).")
                 else:
                     # Extrai apenas o CNPJ/CPF selecionado na caixa (tudo antes do hífen)
-                    cnpj_loja = loja_selecionada.split(" - ")[0]
-                    cnpj_fornecedor = fornecedor_selecionado.split(" - ")[0]
+                    cnpj_loja = loja_selecionada.split(" - ")[0].strip()
+                    cnpj_fornecedor = fornecedor_selecionado.split(" - ")[0].strip()
                     
                     # Dicionário com os dados exatos para inserir no Supabase
                     novo_veiculo = {
@@ -326,7 +359,7 @@ with aba_fipe:
                                 if veiculo_frota == "-- Não vincular (Consulta Externa) --":
                                     st.warning("Nenhum veículo selecionado. O histórico não foi salvo.")
                                 else:
-                                    placa = veiculo_frota.split(" - ")[0]
+                                    placa = veiculo_frota.split(" - ")[0].strip()
                                     # Limpa a string "R$ 45.000,00" para "45000.00" (FLOAT)
                                     valor_float = float(v_fipe.replace("R$ ", "").replace(".", "").replace(",", "."))
 
