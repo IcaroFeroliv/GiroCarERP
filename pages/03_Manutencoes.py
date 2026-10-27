@@ -38,7 +38,7 @@ def formatar_moeda(valor):
 
 
 aba_historico, aba_nova = st.tabs(
-    ["📋 Histórico de serviços", "➕ Registrar manutenção"]
+    [" Histórico de serviços", " Registrar manutenção"]
 )
 
 
