@@ -241,9 +241,9 @@ st.divider()
 
 aba_historico, aba_venda, aba_pagamento = st.tabs(
     [
-        "📋 Histórico de vendas",
-        "➕ Registrar venda",
-        "💳 Lançar pagamento",
+        " Histórico de vendas",
+        " Registrar venda",
+        " Lançar pagamento",
     ]
 )
 
@@ -294,7 +294,7 @@ with aba_venda:
     st.caption("Preencha os dados da negociação para cadastrar a venda.")
 
     if st.button(
-        "🔄 Atualizar opções de cadastro",
+        " Atualizar opções de cadastro",
         key="atualizar_opcoes_venda",
     ):
         st.rerun()
