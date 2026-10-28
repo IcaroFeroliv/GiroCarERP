@@ -460,10 +460,10 @@ with aba_pagamento:
         modalidades = [
             "PIX",
             "Financiamento",
-            "Cart?o de Credito",
-            "Transfer?ncia",
+            "Cartão de Credito",
+            "Transferência",
             "Dinheiro",
-            "Cons?rcio",
+            "Consórcio",
         ]
 
         with st.form("form_lancar_pagamento", clear_on_submit=True):
