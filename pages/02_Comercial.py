@@ -379,7 +379,7 @@ with aba_venda:
 
             valor_negociado = st.number_input(
                 "Valor final negociado (R$)",
-                min_value=0.0,
+                min_value=0.1,
                 step=1000.0,
                 format="%.2f",
             )
@@ -483,7 +483,7 @@ with aba_pagamento:
             with col1:
                 valor_pagamento = st.number_input(
                     "Valor da transação (R$)",
-                    min_value=0.0,
+                    min_value=0.1,
                     step=500.0,
                     format="%.2f",
                 )
