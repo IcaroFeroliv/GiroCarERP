@@ -252,37 +252,83 @@ aba_historico, aba_venda, aba_pagamento = st.tabs(
 # ABA 1 — HISTÓRICO DE VENDAS
 # =========================================================
 
+
 with aba_historico:
     st.subheader("Histórico de vendas")
-    st.caption("Consulte os registros comerciais existentes no sistema.")
+    st.caption("Consulte e filtre os registros comerciais existentes no sistema.")
 
     if df_vendas.empty:
         st.info("Nenhuma venda foi encontrada para exibição.")
     else:
         df_exibicao = df_vendas.copy()
 
-        if "valor_final_negociado" in df_exibicao.columns:
-            df_exibicao["valor_final_negociado"] = pd.to_numeric(
-                df_exibicao["valor_final_negociado"],
+        col_filtro1, col_filtro2 = st.columns(2)
+
+        with col_filtro1:
+            if "placa_veiculo" in df_exibicao.columns:
+                filtro_placa = st.text_input(
+                    "Pesquisar por placa",
+                    placeholder="Ex.: ABC1D23",
+                    key="filtro_placa_vendas",
+                ).strip().upper()
+
+                df_exibicao = df_exibicao[
+                    df_exibicao["placa_veiculo"]
+                    .fillna("")
+                    .astype(str)
+                    .str.upper()
+                    .str.contains(filtro_placa, regex=False)
+                ]
+
+        with col_filtro2:
+            if "valor_final_negociado" in df_exibicao.columns:
+                valores_filtro = pd.to_numeric(
+                    df_exibicao["valor_final_negociado"],
+                    errors="coerce",
+                )
+
+                valor_minimo = float(valores_filtro.min()) if valores_filtro.notna().any() else 0.0
+                valor_maximo = float(valores_filtro.max()) if valores_filtro.notna().any() else 0.0
+
+                faixa_valor = st.slider(
+                    "Faixa de valor negociado (R$)",
+                    min_value=valor_minimo,
+                    max_value=max(valor_maximo, valor_minimo + 1.0),
+                    value=(valor_minimo, max(valor_maximo, valor_minimo + 1.0)),
+                    key="faixa_valor_vendas",
+                )
+
+                df_exibicao = df_exibicao[
+                    valores_filtro.loc[df_exibicao.index].between(
+                        faixa_valor[0],
+                        faixa_valor[1],
+                    )
+                ]
+
+        df_tabela = df_exibicao.copy()
+
+        if "valor_final_negociado" in df_tabela.columns:
+            df_tabela["valor_final_negociado"] = pd.to_numeric(
+                df_tabela["valor_final_negociado"],
                 errors="coerce",
             ).map(formatar_moeda)
 
-        # Mantém todos os campos retornados pelo banco.
-        # Não altera nem exclui dados da tabela original.
         st.dataframe(
-    df_exibicao,
-    width="stretch",
-    hide_index=True,
-    column_config={
-        "valor_final_negociado": st.column_config.TextColumn(
-            "Valor negociado"
-        ),
-        "data": st.column_config.TextColumn("Data da venda"),
-        "placa_veiculo": st.column_config.TextColumn("Placa"),
-    },
-)
+            df_tabela,
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "valor_final_negociado": st.column_config.TextColumn(
+                    "Valor negociado"
+                ),
+                "data": st.column_config.TextColumn("Data da venda"),
+                "placa_veiculo": st.column_config.TextColumn("Placa"),
+            },
+        )
 
-        st.caption(f"Total de registros exibidos: {len(df_exibicao)}")
+        st.caption(
+            f"Exibindo {len(df_exibicao)} de {len(df_vendas)} venda(s)."
+        )
 
 
 # =========================================================
