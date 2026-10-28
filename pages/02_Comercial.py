@@ -446,7 +446,6 @@ with aba_venda:
             }
 
             try:
-                # Mantém os campos da tabela transacao.
                 resposta = (
                     supabase.table("transacao")
                     .insert(dados_venda)
@@ -459,31 +458,27 @@ with aba_venda:
                         "Verifique os dados antes de tentar novamente."
                     )
                 else:
-                    try:
-                        # Mantém a regra atual: veículo vendido após a venda.
-                        supabase.table("veiculo").update(
-                            {"status_veiculo": "Vendido"}
-                        ).eq(
-                            "placa", veiculo_selecionado["placa"]
-                        ).execute()
+                    resposta_status = (
+                        supabase.table("veiculo")
+                        .update({"status_veiculo": "Vendido"})
+                        .eq("placa", veiculo_selecionado["placa"])
+                        .eq("status_veiculo", "Disponivel")
+                        .execute()
+                    )
 
-                        st.success("Venda registrada com sucesso!")
+                    if resposta_status.data:
+                        st.success("Venda registrada e veículo atualizado com sucesso!")
                         st.rerun()
-
-                    except Exception as erro_atualizacao:
-                        logger.exception(
-                            "Venda registrada, mas houve erro ao atualizar "
-                            "o veículo: %s",
-                            erro_atualizacao,
-                        )
-                        st.warning(
-                            "A venda foi registrada, mas não foi possível "
-                            "atualizar o status do veículo. Confira o cadastro "
-                            "antes de realizar outra tentativa."
+                    else:
+                        st.error(
+                            "A venda foi registrada, mas o status do veículo "
+                            "não foi confirmado como atualizado. Verifique o "
+                            "cadastro no banco antes de realizar outra tentativa."
                         )
 
             except Exception as erro:
-                mostrar_erro("registrar a venda", erro)
+                mostrar_erro("registrar a venda ou atualizar o veículo", erro)
+
 
 
 # =========================================================
