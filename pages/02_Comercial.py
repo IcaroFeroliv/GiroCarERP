@@ -299,7 +299,6 @@ with aba_venda:
     ):
         st.rerun()
 
-    veiculos = obter_dados("veiculo", "placa, modelo").copy() if False else None
 
     try:
         resposta_veiculos = (
