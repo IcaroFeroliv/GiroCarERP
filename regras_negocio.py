@@ -14,3 +14,9 @@ def validar_venda_rn01(status_veiculo):
     elif status_formatado == "disponivel":
         return True
     return False
+
+def formatar_moeda_br(valor):
+    """Formata um valor float para o padrão de moeda brasileiro."""
+    if not isinstance(valor, (int, float)):
+        raise TypeError("O valor deve ser numérico.")
+    return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
