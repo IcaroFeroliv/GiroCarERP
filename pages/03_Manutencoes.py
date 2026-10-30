@@ -7,15 +7,19 @@ import streamlit as st
 from database import supabase
 
 
+# Base do projeto e localização da logo usada no cabeçalho da página.
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOGO_PATH = BASE_DIR / "assets" / "girocar.png"
 
+# Configuração global da página do Streamlit para manter a identidade visual.
 st.set_page_config(
     page_title="Oficina e Manutenções | GiroCar",
     page_icon=str(LOGO_PATH),
     layout="wide",
 )
-# Cabeçalho com a identidade visual da GiroCar
+# Cabeçalho com a identidade visual da GiroCar.
+# Aqui a marca e o título da área de oficina são exibidos para manter a
+# consistência visual com as demais páginas do sistema.
 col_logo, col_titulo = st.columns([1, 5], vertical_alignment="center")
 
 with col_logo:
@@ -30,18 +34,22 @@ if not supabase:
     st.error("Não foi possível conectar ao banco de dados.")
     st.stop()
 
-
+# Função auxiliar para padronizar a exibição de valores monetários no formato
+# brasileiro, facilitando a leitura dos custos de manutenção.
 def formatar_moeda(valor):
     valor = float(valor or 0)
     numero = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     return f"R$ {numero}"
 
 
+# A página é dividida em duas abas principais: uma para consultar o histórico
+# de serviços já registrados e outra para incluir novas ordens de serviço.
 aba_historico, aba_nova = st.tabs(
     [" Histórico de serviços", " Registrar manutenção"]
 )
 
 
+# Aba de consulta do histórico de manutenção, com filtros por placa e período.
 with aba_historico:
     st.subheader("Histórico de manutenções")
 
@@ -195,6 +203,9 @@ with aba_historico:
         st.error(f"Não foi possível carregar o histórico: {erro}")
 
 
+# Aba para registrar uma nova ordem de serviço, incluindo veículo, data,
+# descrição do serviço e custo total. Ao salvar, o status do veículo é
+# atualizado para "Em preparacao".
 with aba_nova:
     st.subheader("Nova ordem de serviço")
     st.write("Preencha os dados do veículo e do serviço realizado.")
