@@ -12,6 +12,9 @@ from database import supabase
 # =========================================================
 # CONFIGURAÇÕES
 # =========================================================
+# Este bloco define a base do projeto, a localização da logo e as
+# configurações iniciais do Streamlit. Ele centraliza as definições globais
+# usadas em toda a página comercial.
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOGO_PATH = BASE_DIR / "assets" / "girocar.png"
@@ -29,6 +32,8 @@ st.set_page_config(
 # =========================================================
 # IDENTIDADE VISUAL
 # =========================================================
+# O CSS aplicado aqui padroniza a aparência da página comercial, ajustando
+# espaçamento, cards de métricas, botões e o layout geral da interface.
 
 st.markdown(
     """
@@ -81,6 +86,8 @@ st.markdown(
 # =========================================================
 # FUNÇÕES AUXILIARES
 # =========================================================
+# Essas funções padronizam conversões e mensagens do sistema, evitando
+# repetição de lógica em todas as abas do módulo comercial.
 
 def formatar_moeda(valor):
     """Formata um valor numérico para o padrão monetário brasileiro."""
@@ -141,6 +148,8 @@ def nome_transacao(transacao):
 # =========================================================
 # CABEÇALHO
 # =========================================================
+# O topo da página define a marca do sistema e a identidade visual da área
+# comercial, deixando a interface consistente com as demais páginas.
 
 col_logo, col_titulo = st.columns([1, 6], vertical_alignment="center")
 
@@ -165,6 +174,8 @@ st.divider()
 # =========================================================
 # CARREGAMENTO DAS VENDAS
 # =========================================================
+# Nesta etapa, a página consulta a tabela de transações e prepara o DataFrame
+# que alimenta os indicadores e a aba de histórico.
 
 with st.spinner("Carregando informações comerciais..."):
     try:
@@ -200,6 +211,8 @@ else:
 # =========================================================
 # INDICADORES
 # =========================================================
+# Os indicadores resumem o desempenho comercial da operação em um único bloco
+# visual, facilitando a leitura do faturamento e do ticket médio.
 
 total_vendas = len(vendas)
 faturamento_negociado = float(valores.sum()) if not valores.empty else 0.0
@@ -238,6 +251,8 @@ st.divider()
 # =========================================================
 # ABAS COMERCIAIS
 # =========================================================
+# A navegação por abas separa as três principais operações do módulo:
+# histórico de vendas, cadastro de venda e registro de pagamentos.
 
 aba_historico, aba_venda, aba_pagamento = st.tabs(
     [
@@ -251,7 +266,8 @@ aba_historico, aba_venda, aba_pagamento = st.tabs(
 # =========================================================
 # ABA 1 — HISTÓRICO DE VENDAS
 # =========================================================
-
+# A primeira aba reúne todas as transações já registradas, permitindo filtrar
+# por placa e por faixa de valor para acompanhamento comercial.
 
 with aba_historico:
     st.subheader("Histórico de vendas")
@@ -334,6 +350,8 @@ with aba_historico:
 # =========================================================
 # ABA 2 — REGISTRAR VENDA
 # =========================================================
+# Aqui o usuário escolhe veículo, cliente e funcionário responsável para
+# registrar uma transação e atualizar automaticamente o status do veículo.
 
 with aba_venda:
     st.subheader("Registrar nova venda")
@@ -484,6 +502,8 @@ with aba_venda:
 # =========================================================
 # ABA 3 — LANÇAR PAGAMENTO
 # =========================================================
+# A terceira aba grava os dados do pagamento de uma venda já concluída,
+# incluindo modalidade, valor, parcelas e instituição financeira.
 
 with aba_pagamento:
     st.subheader("Lançar pagamento")
@@ -584,3 +604,4 @@ with aba_pagamento:
 
             except Exception as erro:
                 mostrar_erro("registrar o pagamento", erro)
+                
