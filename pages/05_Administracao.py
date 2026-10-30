@@ -8,6 +8,8 @@ from database import supabase
 # ==========================================
 # CONFIGURAÇÕES
 # ==========================================
+# Inicializa os registros de log, localiza a logo do projeto e define o título,
+# o ícone e a largura da página administrativa no Streamlit.
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,6 +27,7 @@ st.set_page_config(
 # ==========================================
 # ESTILO VISUAL
 # ==========================================
+# Ajusta o alinhamento vertical da logo no cabeçalho desta página.
 
 st.markdown(
     """
@@ -41,6 +44,7 @@ st.markdown(
 # ==========================================
 # CABEÇALHO
 # ==========================================
+# Apresenta a identidade visual e o título da área de administração.
 
 col_logo, col_titulo = st.columns(
     [1, 4],
@@ -65,7 +69,8 @@ with col_titulo:
 # ==========================================
 # CONEXÃO COM O BANCO
 # ==========================================
-
+# Sem a conexão com o Supabase, os cadastros e consultas não podem ser
+# realizados; por isso, a página interrompe a execução neste ponto.
 if supabase is None:
     st.error(
         "Não foi possível conectar ao sistema. "
@@ -77,7 +82,7 @@ if supabase is None:
 # ==========================================
 # ABAS
 # ==========================================
-
+# Divide a administração entre os cadastros de filiais e de funcionários.
 aba_lojas, aba_funcionarios = st.tabs(
     ["Lojas (Filiais)", "Funcionários"]
 )
@@ -86,7 +91,8 @@ aba_lojas, aba_funcionarios = st.tabs(
 # ==========================================
 # ABA 1: LOJAS
 # ==========================================
-
+# Esta aba permite cadastrar unidades da empresa e consultar lojas existentes
+# por CNPJ, nome da unidade ou endereço.
 with aba_lojas:
 
     st.subheader("Cadastro de Loja")
@@ -117,6 +123,7 @@ with aba_lojas:
 
         if submit_loja:
 
+            # Confere os campos essenciais antes de criar o registro da unidade.
             if not cnpj_loja.strip() or not nome_loja.strip():
                 st.warning(
                     "Preencha os campos obrigatórios (CNPJ e Nome)."
@@ -146,7 +153,7 @@ with aba_lojas:
 
     st.divider()
 
-    # CONSULTA DE LOJAS
+    # Consulta e filtra os registros de lojas para exibição em tabela.
     with st.expander(
         "Consultar lojas cadastradas",
         expanded=False
@@ -257,7 +264,8 @@ with aba_lojas:
 # ==========================================
 # ABA 2: FUNCIONÁRIOS
 # ==========================================
-
+# Esta aba registra funcionários e seus vínculos com uma loja, além de
+# disponibilizar a consulta com filtros por cargo e pesquisa textual.
 with aba_funcionarios:
 
     st.subheader("Cadastro de Funcionário")
@@ -298,6 +306,7 @@ with aba_funcionarios:
 
         if submit_func:
 
+            # Exige matrícula, nome e unidade de vínculo para salvar o cadastro.
             if (
                 not matricula.strip()
                 or not nome_func.strip()
@@ -337,7 +346,8 @@ with aba_funcionarios:
 
     st.divider()
 
-    # CONSULTA DE FUNCIONÁRIOS
+    # Consulta o quadro de funcionários e prepara os filtros e os dados
+    # apresentados ao usuário.
     with st.expander(
         "Consultar funcionários",
         expanded=False
