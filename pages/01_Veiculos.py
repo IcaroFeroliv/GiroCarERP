@@ -95,6 +95,9 @@ def valor_fipe_para_float(texto):
 # ==========================================
 # CABEÇALHO
 # ==========================================
+# Este bloco monta o topo da interface, incluindo a marca da aplicação e o
+# título da página. A lógica também ajusta a imagem da logo para ficar
+# alinhada visualmente com o texto principal.
 def render_cabecalho():
     # CSS para alinhar a logo com o título
     st.markdown(
@@ -148,6 +151,8 @@ COLUNAS_MOSTRAR_VEICULO = [
 ]
 
 
+# Esta função aplica os filtros visuais da aba de consulta, permitindo que o
+# usuário busque por placa, status e marca sem mexer nos dados originais.
 def render_filtros_veiculos(df):
     with st.expander("Filtros de Busca", expanded=False):
         col_f1, col_f2, col_f3 = st.columns(3)
@@ -165,6 +170,9 @@ def render_filtros_veiculos(df):
     return df_filtrado
 
 
+# A tabela de veículos foi separada em uma cópia de exibição para manter a
+# estrutura original do DataFrame intacta, já que as ações de edição/exclusão
+# usam os dados brutos em vez do conjunto formatado para a tela.
 def render_tabela_veiculos(df_filtrado):
     # Cópia só para exibição: df_filtrado segue intacto para UPDATE/DELETE
     df_formatado = df_filtrado.copy()
@@ -173,6 +181,8 @@ def render_tabela_veiculos(df_filtrado):
     st.dataframe(df_exibicao[COLUNAS_MOSTRAR_VEICULO], use_container_width=True, hide_index=True)
 
 
+# Esta seção concentra as operações mais rápidas da gestão do estoque:
+# atualizar o status do veículo e excluir registros diretamente do pátio.
 def render_acoes_rapidas(df_filtrado):
     st.subheader("Ações Rápidas")
     col1, col2 = st.columns(2)
@@ -202,6 +212,8 @@ def render_acoes_rapidas(df_filtrado):
                 st.error("Não é possível excluir este veículo pois ele já possui vínculo com Manutenções ou Histórico.")
 
 
+# Aba de leitura e gerenciamento: busca todos os veículos, aplica filtros,
+# exibe a tabela e oferece ações rápidas sobre o estoque atual.
 def render_aba_consulta():
     st.subheader("Veículos no Sistema")
     try:
@@ -229,6 +241,9 @@ def render_aba_consulta():
 # ==========================================
 # ABA 2: CADASTRAR VEÍCULO
 # ==========================================
+# O formulário de cadastro reúne os dados básicos do veículo, os indicadores de
+# risco e os vínculos com loja e fornecedor. A validação acontece antes do
+# insert no banco para garantir que o registro seja consistente.
 def render_aba_cadastro():
     st.subheader("Formulário de Entrada de Veículo")
 
@@ -318,6 +333,9 @@ def render_aba_cadastro():
 # ==========================================
 # ABA 3: CONSULTA FIPE (LIVRE E CASCATA)
 # ==========================================
+# A consulta FIPE segue uma navegação em cascata: marca -> modelo -> ano.
+# Depois que o usuário escolhe os filtros, a aplicação consulta a API e
+# apresenta o valor oficial para uso em avaliação de veículo ou atualização do estoque.
 def render_resultado_fipe(cod_marca, cod_modelo, cod_ano):
     st.divider()
 
@@ -350,6 +368,8 @@ def render_resultado_fipe(cod_marca, cod_modelo, cod_ano):
         mostrar_detalhes_tecnicos(e, titulo="Detalhes Técnicos")
 
 
+# Este bloco permite vincular opcionalmente um valor FIPE ao histórico de um
+# veículo já presente no pátio, ajudando a manter um registro financeiro por placa.
 def render_vinculo_fipe(v_fipe):
     """Permite gravar o valor FIPE consultado no histórico de um veículo da frota (opcional)."""
     st.write("**Vincular ao Histórico de um Veículo da Frota? (Opcional)**")
@@ -390,6 +410,8 @@ def render_vinculo_fipe(v_fipe):
             st.success(f"Sucesso! O valor de {v_fipe} foi gravado no histórico financeiro da placa {placa}.")
 
 
+# Fluxo principal da consulta FIPE: o usuário escolhe marca, modelo e ano em
+# sequência e, ao concluir, a aplicação exibe a avaliação oficial e o vínculo opcional.
 def render_aba_fipe():
     st.subheader("Consultar Avaliação de Veículos (Tabela FIPE)")
     st.write("Pesquise o valor de mercado de qualquer veículo para avaliação de troca ou para atualizar o estoque atual.")
@@ -436,6 +458,8 @@ COLUNAS_RENOMEADAS_HISTORICO = {
 }
 
 
+# A aba de histórico centraliza todas as consultas salvas, permitindo
+# monitorar a variação de valor de mercado por placa e por período.
 def render_aba_historico():
     st.subheader("Histórico de Avaliações (FIPE)")
     st.write("Acompanhe a variação de preço de mercado dos veículos da frota.")
@@ -485,6 +509,9 @@ def render_aba_historico():
 # ==========================================
 # EXECUÇÃO PRINCIPAL
 # ==========================================
+# Este bloco final apenas inicializa o layout da página e monta as abas da
+# aplicação. Nenhuma regra de negócio é alterada aqui; a lógica principal fica
+# distribuída nas funções acima.
 render_cabecalho()
 
 if not supabase:
