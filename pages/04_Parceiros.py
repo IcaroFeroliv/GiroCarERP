@@ -10,6 +10,8 @@ from database import supabase
 # ==========================================
 # CONFIGURAÇÕES
 # ==========================================
+# Define o logger da página, localiza a logo do projeto e configura os
+# metadados e o layout exibidos pelo Streamlit.
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,6 +29,8 @@ st.set_page_config(
 # ==========================================
 # ESTILO VISUAL
 # ==========================================
+# Ajuste visual da logo no cabeçalho; o CSS é aplicado somente à interface
+# desta página.
 
 st.markdown(
     """
@@ -43,6 +47,7 @@ st.markdown(
 # ==========================================
 # CABEÇALHO
 # ==========================================
+# Organiza a logo e o título em colunas para apresentar a área de parceiros.
 
 col_logo, col_titulo = st.columns(
     [1, 4],
@@ -67,7 +72,8 @@ with col_titulo:
 # ==========================================
 # CONEXÃO COM O BANCO
 # ==========================================
-
+# Interrompe a renderização se a conexão não estiver disponível, evitando
+# apresentar formulários que não poderiam salvar ou consultar informações.
 if supabase is None:
     st.error("Erro de conexão com o banco de dados.")
     st.stop()
@@ -76,7 +82,7 @@ if supabase is None:
 # ==========================================
 # ABAS
 # ==========================================
-
+# Separa o gerenciamento de clientes do cadastro e consulta de fornecedores.
 aba_clientes, aba_fornecedores = st.tabs(
     ["Clientes (CRM)", "Fornecedores"]
 )
@@ -85,7 +91,8 @@ aba_clientes, aba_fornecedores = st.tabs(
 # ==========================================
 # ABA 1: CLIENTES
 # ==========================================
-
+# A aba de clientes permite cadastrar contatos comerciais e consultar os
+# registros existentes com pesquisa textual e filtro pelo estágio do funil.
 with aba_clientes:
 
     st.subheader("Cadastro de Clientes")
@@ -129,6 +136,7 @@ with aba_clientes:
 
         if submit_cliente:
 
+            # Valida os campos obrigatórios antes de montar e enviar o registro.
             if (
                 not cpf_cnpj_cliente.strip()
                 or not nome_cliente.strip()
@@ -318,7 +326,8 @@ with aba_clientes:
 # ==========================================
 # ABA 2: FORNECEDORES
 # ==========================================
-
+# A aba de fornecedores registra a origem dos veículos e permite localizar
+# fornecedores já cadastrados por documento, nome ou telefone.
 with aba_fornecedores:
 
     st.subheader("Cadastro de Fornecedores")
@@ -358,6 +367,7 @@ with aba_fornecedores:
 
         if submit_forn:
 
+            # Exige documento e nome para evitar o envio de um cadastro incompleto.
             if (
                 not cnpj_cpf_forn.strip()
                 or not nome_forn.strip()
