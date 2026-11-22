@@ -3,6 +3,10 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 from database import supabase
+from components.regras_negocio.trava_seguranca import verificar_acesso
+
+# Aplica a trava de segurança informando o nome exato do arquivo atual
+verificar_acesso(Path(__file__).name)
 
 # Importações de Regras de Negócio e Componentes Visuais
 from components.regras_negocio.calcular_kpis_comercial import calcular_kpis_comercial
