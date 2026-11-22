@@ -2,6 +2,9 @@ import logging
 from pathlib import Path
 import streamlit as st
 from database import supabase
+from components.regras_negocio.trava_seguranca import verificar_acesso
+
+verificar_acesso(Path(__file__).name)
 
 # Importações dos Componentes Visuais
 from components.parceiros.cabecalho import render_cabecalho
